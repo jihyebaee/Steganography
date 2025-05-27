@@ -78,7 +78,14 @@ def keypoint_detection(carrier_img_gray):
 ## Depending on its size and the number of keypoints, adjust the watermark accordingly
 # Embed the watermark by subtly modifying the pixel values at the detected keypoints in the cover image using LSB
 # Ensure the watermark remains imperceptible to the human eye but retrievable with the correct method
-def watermark_encoding(watermark_img_gray):
+def watermark_encoding(watermark_img_gray, pixel_size=3):
+    # Resize if watermark is too big
+    height, width = watermark_img_gray.shape
+
+    if height > pixel_size or width > pixel_size:
+        print("Resize watermark because it is too big")
+        watermark_img_gray = cv2.resize(watermark_img_gray, (pixel_size, pixel_size), interpolation=cv2.INTER_AREA)
+
     data_watermark = np.array(watermark_img_gray)
     print(data_watermark)
 
