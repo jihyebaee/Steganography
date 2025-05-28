@@ -63,7 +63,6 @@ def upload_file():
             watermark.save(watermark_path)
 
             carrier_img, watermark_img = input_images(carrier_path, watermark_path)
-            flash("Images uploaded")
 
             carrier_img_gray, watermark_img_gray = preprocessing(carrier_img, watermark_img)
             top20_kp, _ = keypoint_detection(carrier_img_gray)
@@ -138,14 +137,13 @@ def upload_file():
             tampered.save(tampered_path)
 
             tampered_img, watermark_img = input_images(tampered_path, watermark_path)
-            flash("Images uploaded")
 
             tampered_img_gray, watermark_img_gray = preprocessing(tampered_img, watermark_img)
             top_kp, _ = keypoint_detection(tampered_img_gray)
             watermark_bits = watermark_encoding(watermark_img_gray, pixel_size=3)
             watermark_height, watermark_width = watermark_img_gray.shape
 
-            recovery = watermark_recovery(embedded_img, top20_kp, watermark_width, watermark_height)
+            recovery = watermark_recovery(tampered_img, top_kp, watermark_width, watermark_height)
             if not recovery:
                 flash("Watermark recovery failed")
                 return redirect(request.url)
