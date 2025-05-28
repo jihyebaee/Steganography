@@ -94,7 +94,9 @@ def upload_file():
                 return redirect(request.url)
 
             verifier_filename = "verifier.png"
+            watermark_filename = "watermark.png"
             verifier_path = os.path.join(app.config['UPLOAD_FOLDER'], verifier_filename)
+            watermark_path = os.path.join(app.config['UPLOAD_FOLDER'], "watermark.png")
 
             verifier.save(verifier_path)
 

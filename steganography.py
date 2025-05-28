@@ -12,10 +12,6 @@ import numpy as np
 # Open an image to serve as the carrier for watermark
 # The image should have enough complexity to hide the watermark without visual distortion
 # Choose a smaller image to be hidden in the cover image
-carrier_path = 'images/food.png'
-watermark_path = 'images/watermark5.png'
-tampered_path = 'images/tampered4.png'
-
 def input_images(carrier_path, watermark_path):
     # Read Image
     carrier_img = cv2.imread(carrier_path)
