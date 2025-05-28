@@ -26,6 +26,7 @@ def upload_file():
     carrier_imgfile = None
     watermark_imgfile = None
     embedded_img = None
+    result_img = None
 
     if request.method == 'POST':
         option = request.form.get('option')
@@ -121,8 +122,55 @@ def upload_file():
         # If tampered is detected, the output shold include the image marked with keypoints
         # that do not match the expected watermark
         # This is particularly useful for identifying specific manipulations or image composites.
+        elif option == 'tamperingDetector':
+            if 'input' not in request.files:
+                flash('No input image')
+                return redirect(request.url)
+            
+            input = request.files['input']
+
+            tampered = request.files['input']
+            if tampered.filename == '':
+                flash('No selected file.')
+                return redirect(request.url)       
+
+            tampered_filename = "tampered.png"
+            watermark_filename = "watermark.png"
+            tampered_path = os.path.join(app.config['UPLOAD_FOLDER'], tampered_filename)
+            watermark_path = os.path.join(app.config['UPLOAD_FOLDER'], watermark_filename)
+
+            tampered.save(tampered_path)
+
+            tampered_img, watermark_img = input_images(tampered_path, watermark_path)
+            flash("Images uploaded")
+
+            tampered_img_gray, watermark_img_gray = preprocessing(tampered_img, watermark_img)
+            top_kp, _ = keypoint_detection(tampered_img_gray)
+            watermark_bits = watermark_encoding(watermark_img_gray, pixel_size=3)
+            watermark_height, watermark_width = watermark_img_gray.shape
+
+            recovery = watermark_recovery(embedded_img, top20_kp, watermark_width, watermark_height)
+            if not recovery:
+                flash("Watermark recovery failed")
+                return redirect(request.url)
+
+            kps_mismatch = []
+            for i, recovered_bits in enumerate(recovery):
+                match = sum(a == b for a, b in zip(watermark_bits, recovered_bits)) / len(watermark_bits)
+                if match < 0.9:
+                    kps_mismatch.append(top_kp[i])
+
+            output_img = tampered_img.copy()
+            kps_marked = cv2.drawKeypoints(output_img, kps_mismatch, None, color=(0, 0, 255),
+                                                flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+            result_img = "tampering_detected.png"
+            cv2.imwrite(os.path.join('static', result_img), kps_marked)
+            result = "Authentic image." if not kps_mismatch else "Tampering detected"
+
+    return render_template("index.html", result=result, embedded_img=result_img,
+                            carrier_img=carrier_imgfile, watermark_img=watermark_imgfile)
 
 if __name__ == '__main__':
     os.makedirs('static', exist_ok=True)
     app.run(debug=True)
-
