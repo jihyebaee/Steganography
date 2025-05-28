@@ -66,10 +66,10 @@ def upload_file():
             carrier_img, watermark_img = input_images(carrier_path, watermark_path)
 
             carrier_img_gray, watermark_img_gray = preprocessing(carrier_img, watermark_img)
-            top20_kp, _ = keypoint_detection(carrier_img_gray)
+            top_kp = keypoint_detection(carrier_img_gray)
             watermark_bits = watermark_encoding(watermark_img_gray, pixel_size=3)
             watermark_height, watermark_width = watermark_img_gray.shape
-            embedded = watermark_embedding(carrier_img, top20_kp, watermark_bits, watermark_height, watermark_width)
+            embedded = watermark_embedding(carrier_img, top_kp, watermark_bits, watermark_height, watermark_width)
             
             embedded_img = "embedded.png"
             cv2.imwrite(os.path.join('static', embedded_img), embedded)
@@ -103,11 +103,11 @@ def upload_file():
             embedded_img, watermark_img = input_images(verifier_path, watermark_path)
 
             embedded_img_gray, watermark_img_gray = preprocessing(embedded_img, watermark_img)
-            top20_kp, _ = keypoint_detection(embedded_img_gray)
+            top_kp = keypoint_detection(embedded_img_gray)
             watermark_bits = watermark_encoding(watermark_img_gray, pixel_size=3)
             watermark_height, watermark_width = watermark_img_gray.shape
 
-            recovery = watermark_recovery(embedded_img, top20_kp, watermark_width, watermark_height)
+            recovery = watermark_recovery(embedded_img, top_kp, watermark_width, watermark_height)
             recovery_bits = recovery[0] if recovery else []
             matching = sum([a == b for a, b in zip(watermark_bits, recovery_bits)]) / len(watermark_bits) if watermark_bits else 0
 
@@ -123,9 +123,8 @@ def upload_file():
                 flash('No input image')
                 return redirect(request.url)
             
-            input = request.files['input']
-
             tampered = request.files['input']
+            
             if tampered.filename == '':
                 flash('No selected file.')
                 return redirect(request.url)       
@@ -140,7 +139,7 @@ def upload_file():
             tampered_img, watermark_img = input_images(tampered_path, watermark_path)
 
             tampered_img_gray, watermark_img_gray = preprocessing(tampered_img, watermark_img)
-            top_kp, _ = keypoint_detection(tampered_img_gray)
+            top_kp = keypoint_detection(tampered_img_gray)
             watermark_bits = watermark_encoding(watermark_img_gray, pixel_size=3)
             watermark_height, watermark_width = watermark_img_gray.shape
 

@@ -1,6 +1,7 @@
 # Implement image-to-image steganography to embed a watermark (image)
 
 import cv2
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -59,31 +60,38 @@ def preprocessing(carrier_img, watermark_img):
 # Apply the SIFT algorithm to detect keypoints in the cover image (Carrier image)
 # Extract the coordinates and feature descriptors of N keypoints
 # to serve as the locations for embedding the watermark.
-def keypoint_detection(carrier_img_gray):
+def keypoint_detection(carrier_img_gray, min_distance=None):
     sift = cv2.SIFT_create()
-    kp, des = sift.detectAndCompute(carrier_img_gray, None)
+    kp, _ = sift.detectAndCompute(carrier_img_gray, None)
 
     print(f"There are {len(kp)} keypoints")
 
-    # N keypoints (Top 3 big points)
-    n_kp = sorted(kp, key=lambda x: -x.size)
-    top20_kp = n_kp[:20]
-    top20_des = des[:20]
+    # Find biggest keypoint size
+    kp_size = max([k.size for k in kp]) if kp else 0
+    kp_min_distance = int(kp_size * 0.6)
+
+    if min_distance is None:
+        min_distance = kp_min_distance
+
+    n_kp_des = sorted(kp, key=lambda x: -x.size)
+
+    top_kp = []
+
+    for current_kp in n_kp_des:
+        if all(np.linalg.norm(np.array(current_kp.pt) - np.array(existing_kp.pt)) >= min_distance for existing_kp in top_kp):
+            top_kp.append(current_kp)
 
     # Draw keypoints on the grayscale image
-    sift_image = cv2.drawKeypoints(carrier_img_gray, top20_kp, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    sift_image = cv2.drawKeypoints(carrier_img_gray, top_kp, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-    cv2.imwrite("Top20 key point detection.png", sift_image)
-    print("Top 20 Key points detected")
+    cv2.imwrite("key point detection.png", sift_image)
+    print("Key points detected")
 
     # Extract the coordinates of keypoints
-    coordinates = cv2.KeyPoint_convert(top20_kp)
+    coordinates = cv2.KeyPoint_convert(top_kp)
     print(coordinates)
 
-    # Extract feature descriptors of N keypoints
-    print(top20_des)
-
-    return top20_kp, top20_des
+    return top_kp
 
 
 # 1.4. Watermark Encoding and Embedding
@@ -111,14 +119,14 @@ def watermark_encoding(watermark_img_gray, pixel_size=3):
     
     return watermark_bits
 
-def watermark_embedding(carrier_img, top20_kp, watermark_bits, watermark_height, watermark_width):
+def watermark_embedding(carrier_img, top_kp, watermark_bits, watermark_height, watermark_width):
     embedded_img = carrier_img.copy()
     embedded_img_height, embedded_img_width, _ = embedded_img.shape
 
     x = watermark_width // 2
     y = watermark_height // 2
 
-    for kp in top20_kp:
+    for kp in top_kp:
         center_x = int(kp.pt[0])
         center_y = int(kp.pt[1])
         bit_index = 0
@@ -147,14 +155,14 @@ def watermark_embedding(carrier_img, top20_kp, watermark_bits, watermark_height,
 
 
 # Watermark Recovery
-def watermark_recovery(embedded_img, top20_kp, watermark_width, watermark_height):
+def watermark_recovery(embedded_img, top_kp, watermark_width, watermark_height):
     # 2.1 Reapply the SIFT algorithm to the modified image(with the watermark embedded)
     embedded_img_gray = cv2.cvtColor(embedded_img, cv2.COLOR_BGR2GRAY)
     print("Convert the embedded image to grayscale")
 
     sift = cv2.SIFT_create()
     kp, des = sift.detectAndCompute(embedded_img_gray, None)
-    top_kp = sorted(kp, key=lambda x: -x.size)[:len(top20_kp)]
+    n_kp_des = sorted(kp, key=lambda x: -x.size)
 
     # 2.2 Detect the same set of keypoints from the modified image
     embedded_img_height, embedded_img_width, _ = embedded_img.shape
@@ -189,21 +197,17 @@ def watermark_recovery(embedded_img, top20_kp, watermark_width, watermark_height
 # Build a tool to upload an image and determine if it has been tampered with by comparing the watermark's consistency
 # This tool should test for common tampering techniques(cropping, resizing, or rotating)
 # And flag any discrepancies in the wateramrk extraction process
-def tampering_detector(tampered_img, watermark_bits, top20_kp, watermark_height, watermark_width, threshold=0.9):
-    watermark_recovery_list = watermark_recovery(tampered_img, top20_kp, watermark_width, watermark_height)
+def tampering_detector(tampered_img, watermark_bits, top_kp, watermark_height, watermark_width, threshold=0.9):
+    watermark_recovery_list = watermark_recovery(tampered_img, top_kp, watermark_width, watermark_height)
 
-    if not watermark_recovery_list or len(watermark_recovery_list[0]) == 0:
-        return "Tampering is detected"
+    for recovered_bits in watermark_recovery_list:
+        if not recovered_bits:
+            return "Tampered"
+        compare = min(len(watermark_bits), len(recovered_bits))
+        matching = sum(watermark_bits[i] == recovered_bits[i] for i in range(compare)) / compare
+
+        if matching < threshold:
+            return "Tampered"
+        
+    return "Authentic"
     
-    recovered_bits = watermark_recovery_list[0]
-    compare = min(len(watermark_bits), len(recovered_bits))
-
-    matching_num = sum(1 for i in range(compare) if watermark_bits[i] == recovered_bits[i])
-    matching = matching_num / compare
-
-    if matching >= threshold:
-        print("Image is authentic")
-        return "Authentic"
-    else:
-        print("Image is tampered")
-        return "Tampered"
