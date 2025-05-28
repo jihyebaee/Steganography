@@ -82,8 +82,8 @@
             const option = document.getElementById("option").value;
             document.getElementById("carrier").style.display = (option === "watermarkEmbedder") ? "block" : "none";
             document.getElementById("watermark").style.display = (option === "watermarkEmbedder") ? "block" : "none";
-            document.getElementById("verifier").style.display = (option === "verifier" || option === "tamperingDetector") ? "block" : "none";
-
+            document.getElementById("verifier").style.display = (option === "verifier") ? "block" : "none";
+            document.getElementById("input").style.display = (option === "tamperingDetector") ? "block" : "none";
         }
     </script>
 </head>
@@ -113,6 +113,11 @@
         <div id="verifier" style="display:none">
             <label>Embedded Image:</label>
             <input type="file" name="verifier">
+        </div>
+
+        <div id="input" style="display:none">
+            <label>Image:</label>
+            <input type="file" name="input" id="input">
         </div>
 
         <button type="submit">Submit</button>
