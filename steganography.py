@@ -13,6 +13,23 @@ import numpy as np
 # The image should have enough complexity to hide the watermark without visual distortion
 # Choose a smaller image to be hidden in the cover image
 def input_images(carrier_path, watermark_path):
+    # Change to png
+    def png(image_path):
+        image = cv2.imread(image_path)
+
+        if image is None:
+            raise FileNotFoundError(f"Image is not found")
+        
+        base, _ = os.path.splitext(image_path)
+        png_path = base + ".png"
+        cv2.imwrite(png_path, image)
+        return png_path
+    
+    if not carrier_path.lower().endswith('.png'):
+        carrier_path = png(carrier_path)
+    if not watermark_path.lower().endswith('.png'):
+        watermark_path = png(watermark_path)
+
     # Read Image
     carrier_img = cv2.imread(carrier_path)
     watermark_img = cv2.imread(watermark_path)
