@@ -158,6 +158,10 @@ def upload_file():
             output_img = tampered_img.copy()
             kps_marked = cv2.drawKeypoints(output_img, kps_mismatch, None, color=(0, 0, 255),
                                                 flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+            
+            for kp in kps_mismatch:
+                x, y = int(kp.pt[0]), int(kp.pt[1])
+                cv2.circle(kps_marked, (x,y), 20, (0, 0, 255), -1)
 
             result_img = "tampering_detected.png"
             cv2.imwrite(os.path.join('static', result_img), kps_marked)
