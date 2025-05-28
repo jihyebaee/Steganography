@@ -79,7 +79,7 @@ def upload_file():
 
         # Authenticity Verifier: to verify if an image contains the watermark
         # Given an image, it should return “Yes” or “No”
-        elif option == 'Verifier':
+        elif option == 'verifier':
             # Check if the post request has the file part
             if 'verifier' not in request.files:
                 flash('No verifier file part')
@@ -121,9 +121,6 @@ def upload_file():
         # If tampered is detected, the output shold include the image marked with keypoints
         # that do not match the expected watermark
         # This is particularly useful for identifying specific manipulations or image composites.
-
-        return render_template("index.html", result = result, result_img=embedded_img, 
-                               carrier_img=carrier_imgfile, watermark_img=watermark_imgfile)
 
 if __name__ == '__main__':
     os.makedirs('static', exist_ok=True)
