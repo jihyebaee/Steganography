@@ -146,11 +146,17 @@
             <img src="{{ url_for('static', filename=watermark_img) }}">
         </div>
         {% endif %}
-
+        
         {% if embedded_img %}
         <div>
             <p><strong>Embedded Image</strong></p>
-            <img src="{{ url_for('static', filename=embedded_img) }}">
+            <img src="{{ url_for('static', filename=embedded_img) }}" alt="Embedded Image">
+
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="{{ url_for('static', filename=embedded_img) }}" download="{{ embedded_img }}">
+                    <button type="button">Download Embedded Image</button>
+                </a>
+            </div>
         </div>
         {% endif %}
     </div>

@@ -73,6 +73,7 @@ def upload_file():
             
             embedded_img = "embedded.png"
             cv2.imwrite(os.path.join('static', embedded_img), embedded)
+            result_img = embedded_img
             result = "Watermark successfully embedded"
 
             carrier_imgfile = carrier_filename
