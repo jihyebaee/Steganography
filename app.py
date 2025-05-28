@@ -22,6 +22,7 @@ def allowed_file(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
+    option = ''
     result = ''
     carrier_imgfile = None
     watermark_imgfile = None
@@ -163,7 +164,7 @@ def upload_file():
             result = "Authentic image." if not kps_mismatch else "Tampering detected"
 
     return render_template("index.html", result=result, embedded_img=result_img,
-                            carrier_img=carrier_imgfile, watermark_img=watermark_imgfile)
+                            carrier_img=carrier_imgfile, watermark_img=watermark_imgfile, option=option)
 
 if __name__ == '__main__':
     os.makedirs('static', exist_ok=True)
