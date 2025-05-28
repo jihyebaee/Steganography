@@ -81,7 +81,7 @@
         function update() {
             const option = document.getElementById("option").value;
             document.getElementById("carrier").style.display = (option === "watermarkEmbedder") ? "block" : "none";
-            document.getElementById("watermark").style.display = (option !== "") ? "block" : "none";
+            document.getElementById("watermark").style.display = (option === "watermarkEmbedder") ? "block" : "none";
             document.getElementById("verifier").style.display = (option === "verifier" || option === "tamperingDetector") ? "block" : "none";
 
         }

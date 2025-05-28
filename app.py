@@ -92,17 +92,11 @@ def upload_file():
             if verifier.filename == '':
                 flash('No selected file')
                 return redirect(request.url)
-            if watermark.filename == '':
-                flash('No selected file')
-                return redirect(request.url)
 
             verifier_filename = "verifier.png"
-            watermark_filename = "watermark.png"
             verifier_path = os.path.join(app.config['UPLOAD_FOLDER'], verifier_filename)
-            watermark_path = os.path.join(app.config['UPLOAD_FOLDER'], watermark_filename)
 
             verifier.save(verifier_path)
-            watermark.save(watermark_path)
 
             embedded_img, watermark_img = input_images(verifier_path, watermark_path)
             flash("Images uploaded")
