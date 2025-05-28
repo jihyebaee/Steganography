@@ -101,7 +101,6 @@ def upload_file():
             verifier.save(verifier_path)
 
             embedded_img, watermark_img = input_images(verifier_path, watermark_path)
-            flash("Images uploaded")
 
             embedded_img_gray, watermark_img_gray = preprocessing(embedded_img, watermark_img)
             top20_kp, _ = keypoint_detection(embedded_img_gray)
