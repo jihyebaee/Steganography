@@ -69,8 +69,8 @@ def upload_file():
             top_kp = keypoint_detection(carrier_img_gray)
             watermark_bits = watermark_encoding(watermark_img_gray, pixel_size=3)
             watermark_height, watermark_width = watermark_img_gray.shape
-            embedded = watermark_embedding(carrier_img, top_kp, watermark_bits, watermark_height, watermark_width)
             
+            embedded = watermark_embedding(carrier_img, top_kp, watermark_bits, watermark_height, watermark_width, watermark_img_gray)
             embedded_img = "embedded.png"
             cv2.imwrite(os.path.join('static', embedded_img), embedded)
             result_img = embedded_img
@@ -78,6 +78,7 @@ def upload_file():
 
             carrier_imgfile = carrier_filename
             watermark_imgfile = watermark_filename
+
 
         # Authenticity Verifier: to verify if an image contains the watermark
         # Given an image, it should return “Yes” or “No”
@@ -94,7 +95,6 @@ def upload_file():
                 return redirect(request.url)
 
             verifier_filename = "verifier.png"
-            watermark_filename = "watermark.png"
             verifier_path = os.path.join(app.config['UPLOAD_FOLDER'], verifier_filename)
             watermark_path = os.path.join(app.config['UPLOAD_FOLDER'], "watermark.png")
 
@@ -107,11 +107,19 @@ def upload_file():
             watermark_bits = watermark_encoding(watermark_img_gray, pixel_size=3)
             watermark_height, watermark_width = watermark_img_gray.shape
 
-            recovery = watermark_recovery(embedded_img, top_kp, watermark_width, watermark_height)
-            recovery_bits = recovery[0] if recovery else []
-            matching = sum([a == b for a, b in zip(watermark_bits, recovery_bits)]) / len(watermark_bits) if watermark_bits else 0
+            recovery = watermark_recovery(embedded_img, top_kp, watermark_img_gray, watermark_width, watermark_height)
+            matching = [match for angle, match in recovery]
 
-            result = "Yes. Watermark detected" if matching > 0.9 else "No. Watermark is not detected"
+            if matching:
+                threshold = sum(matching) / len(matching)
+            else:
+                threshold = 0
+
+            if threshold > 0.9:
+                result = "Yes. Watermark detected."
+            else:
+                result = "No. Watermark is not detected."
+
 
         # Tampering Detector: to detect whether an image has been altered based on watermark consistency
         # Given an input image, the tool should return "Yes" if tampered is detected and "No" otherwise
@@ -124,33 +132,30 @@ def upload_file():
                 return redirect(request.url)
             
             tampered = request.files['input']
-            
+
             if tampered.filename == '':
                 flash('No selected file.')
                 return redirect(request.url)       
 
             tampered_filename = "tampered.png"
-            watermark_filename = "watermark.png"
             tampered_path = os.path.join(app.config['UPLOAD_FOLDER'], tampered_filename)
-            watermark_path = os.path.join(app.config['UPLOAD_FOLDER'], watermark_filename)
+            watermark_path = os.path.join(app.config['UPLOAD_FOLDER'], "watermark.png")
 
             tampered.save(tampered_path)
 
             tampered_img, watermark_img = input_images(tampered_path, watermark_path)
-
             tampered_img_gray, watermark_img_gray = preprocessing(tampered_img, watermark_img)
             top_kp = keypoint_detection(tampered_img_gray)
             watermark_bits = watermark_encoding(watermark_img_gray, pixel_size=3)
             watermark_height, watermark_width = watermark_img_gray.shape
 
-            recovery = watermark_recovery(tampered_img, top_kp, watermark_width, watermark_height)
+            recovery = watermark_recovery(tampered_img, top_kp, watermark_img_gray, watermark_width, watermark_height)            
             if not recovery:
                 flash("Watermark recovery failed")
                 return redirect(request.url)
 
             kps_mismatch = []
-            for i, recovered_bits in enumerate(recovery):
-                match = sum(a == b for a, b in zip(watermark_bits, recovered_bits)) / len(watermark_bits)
+            for i, (angle, match) in enumerate(recovery):
                 if match < 0.9:
                     kps_mismatch.append(top_kp[i])
 
@@ -164,7 +169,11 @@ def upload_file():
 
             result_img = "tampering_detected.png"
             cv2.imwrite(os.path.join('static', result_img), kps_marked)
-            result = "Authentic image." if not kps_mismatch else "Tampering detected"
+
+            if not kps_mismatch:
+                result = "Authentic image."
+            else:
+                result = "Tampering detected"
 
     return render_template("index.html", result=result, embedded_img=result_img,
                             carrier_img=carrier_imgfile, watermark_img=watermark_imgfile, option=option)
