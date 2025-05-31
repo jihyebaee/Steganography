@@ -24,6 +24,7 @@ Computer Vision assignment for COM31006 that uses the SIFT algorithm and Least S
    pip install flask
    pip install --upgrade pip
    pip install numpy
+   pip install matplotlib
    ```
 
 ## Running the App
